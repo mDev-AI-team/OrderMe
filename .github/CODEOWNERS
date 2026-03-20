@@ -1,0 +1,6 @@
+# CODEOWNERS
+# All changes require CTO review.
+# The CTO GitHub handle must be set here once the GitHub org is configured.
+# Replace @org/cto with the actual CTO GitHub username or team.
+
+* @org/cto
