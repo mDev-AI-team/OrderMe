@@ -94,6 +94,30 @@ describe('createRateLimiter', () => {
     expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
   });
 
+  it('uses a custom keyExtractor when provided', async () => {
+    const redis = makeRedisMock();
+    const app = express();
+    app.use(express.json());
+    // Email-keyed limiter (like loginLimiter)
+    const limiter = createRateLimiter(redis as any, {
+      limit: 2,
+      windowSeconds: 60,
+      keyPrefix: 'rl:login',
+      keyExtractor: (req) => (req.body?.email as string | undefined) ?? req.ip ?? 'unknown',
+    });
+    app.post('/login', limiter, (_req, res) => res.json({ ok: true }));
+
+    // Same IP, same email — shares the same bucket
+    await request(app).post('/login').send({ email: 'a@example.com' });
+    await request(app).post('/login').send({ email: 'a@example.com' });
+    const blocked = await request(app).post('/login').send({ email: 'a@example.com' });
+    expect(blocked.status).toBe(429);
+
+    // Different email from same IP — independent bucket
+    const allowed = await request(app).post('/login').send({ email: 'b@example.com' });
+    expect(allowed.status).toBe(200);
+  });
+
   it('tracks limits independently per IP', async () => {
     const { app } = makeApp(2, 60);
 

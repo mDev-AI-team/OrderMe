@@ -30,7 +30,12 @@ export function createApp({ db, redis, logger }: AppDependencies) {
   });
 
   // Route-specific auth rate limiters (applied before tenant resolution)
-  const loginLimiter = createRateLimiter(redis, { limit: 5, windowSeconds: 60, keyPrefix: 'rl:login' });
+  const loginLimiter = createRateLimiter(redis, {
+    limit: 5,
+    windowSeconds: 60,
+    keyPrefix: 'rl:login',
+    keyExtractor: (req) => (req.body?.email as string | undefined) ?? req.ip ?? 'unknown',
+  });
   const registerLimiter = createRateLimiter(redis, { limit: 3, windowSeconds: 60, keyPrefix: 'rl:register' });
   const forgotPasswordLimiter = createRateLimiter(redis, { limit: 3, windowSeconds: 60, keyPrefix: 'rl:forgotPassword' });
 

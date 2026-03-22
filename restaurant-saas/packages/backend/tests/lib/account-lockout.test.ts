@@ -63,7 +63,7 @@ describe('isAccountLocked', () => {
 
   it('returns true when the account lockout key exists', async () => {
     const redis = makeRedisMock();
-    await redis.set('lockout:locked:user@example.com', '1', 'EX', 900);
+    await redis.set('lockout:locked:user@example.com', '1', 'EX', 1800);
     const locked = await isAccountLocked(redis as any, 'user@example.com');
     expect(locked).toBe(true);
   });
@@ -127,7 +127,7 @@ describe('clearFailedAttempts', () => {
     const redis = makeRedisMock();
     const email = 'unlock@example.com';
 
-    await redis.set('lockout:locked:' + email, '1', 'EX', 900);
+    await redis.set('lockout:locked:' + email, '1', 'EX', 1800);
     expect(await isAccountLocked(redis as any, email)).toBe(true);
 
     await clearFailedAttempts(redis as any, email);

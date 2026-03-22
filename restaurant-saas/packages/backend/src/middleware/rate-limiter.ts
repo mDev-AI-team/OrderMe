@@ -5,18 +5,22 @@ export interface RateLimiterOptions {
   limit: number;
   windowSeconds: number;
   keyPrefix: string;
+  keyExtractor?: (req: Request) => string;
+}
+
+function defaultKeyExtractor(req: Request): string {
+  return (
+    (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+    req.ip ||
+    'unknown'
+  );
 }
 
 export function createRateLimiter(redis: Redis, options: RateLimiterOptions) {
-  const { limit, windowSeconds, keyPrefix } = options;
+  const { limit, windowSeconds, keyPrefix, keyExtractor = defaultKeyExtractor } = options;
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const ip =
-      (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
-      req.ip ||
-      'unknown';
-
-    const key = `${keyPrefix}:${ip}`;
+    const key = `${keyPrefix}:${keyExtractor(req)}`;
 
     const count = await redis.incr(key);
     if (count === 1) {

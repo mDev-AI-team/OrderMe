@@ -4,7 +4,7 @@ export const LOCKOUT_THRESHOLD = 10;
 const ATTEMPTS_KEY_PREFIX = 'lockout:attempts:';
 const LOCKED_KEY_PREFIX = 'lockout:locked:';
 const ATTEMPTS_TTL_SECONDS = 3600; // 1 hour window for counting attempts
-const LOCKOUT_TTL_SECONDS = 900;   // 15-minute lockout
+const LOCKOUT_TTL_SECONDS = 1800;  // 30-minute lockout
 
 function attemptsKey(identifier: string): string {
   return `${ATTEMPTS_KEY_PREFIX}${identifier}`;
