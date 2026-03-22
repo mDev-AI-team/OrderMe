@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type Redis from 'ioredis';
 import type pino from 'pino';
 import { verifyToken } from '../lib/jwt';
-import type { TenantContext } from '@restaurant-saas/shared';
+import type { TenantContext, UserRole } from '@restaurant-saas/shared';
 
 export interface AuthenticatedUser {
   sub: string;
@@ -58,5 +58,23 @@ export function createAuthMiddleware(redis: Redis, logger: pino.Logger) {
     } satisfies AuthenticatedUser;
 
     next();
+  };
+}
+
+export function authorize(...allowedRoles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as any).user as AuthenticatedUser | undefined;
+
+    if (!user) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
+
+    if (user.role === 'super_admin' || allowedRoles.includes(user.role as UserRole)) {
+      next();
+      return;
+    }
+
+    res.status(403).json({ success: false, error: 'Forbidden' });
   };
 }
