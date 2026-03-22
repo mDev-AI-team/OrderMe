@@ -48,6 +48,11 @@ export async function findBySlug(trx: Knex.Transaction, slug: string): Promise<T
   return row ?? null;
 }
 
+export async function findTenantById(trx: Knex.Transaction, id: string): Promise<Tenant | null> {
+  const row = await trx<Tenant>('tenants').where({ id }).first();
+  return row ?? null;
+}
+
 export async function isSlugAvailable(
   trx: Knex.Transaction,
   slug: string,
@@ -74,6 +79,7 @@ export async function createTenant(
     currency: input.currency ?? 'USD',
     timezone: input.timezone ?? 'UTC',
     status: 'pending',
+    onboarding_step: 1,
   };
   if (input.id) insert.id = input.id;
   if (input.logoUrl) insert.logo_url = input.logoUrl;
@@ -133,10 +139,26 @@ export async function updateSlug(
   return tenant;
 }
 
+export async function updateOnboardingStep(
+  trx: Knex.Transaction,
+  tenantId: string,
+  step: number
+): Promise<Tenant> {
+  const [tenant] = await trx<Tenant>('tenants')
+    .where({ id: tenantId })
+    .update({ onboarding_step: step })
+    .returning('*');
+  return tenant;
+}
+
 export async function activateTenant(trx: Knex.Transaction, tenantId: string): Promise<Tenant> {
   const [tenant] = await trx<Tenant>('tenants')
     .where({ id: tenantId })
-    .update({ status: 'active' })
+    .update({
+      status: 'active',
+      onboarding_step: null,
+      onboarding_completed_at: trx.fn.now(),
+    })
     .returning('*');
   return tenant;
 }
