@@ -6,6 +6,10 @@ import { createTenantContextMiddleware } from './middleware/tenant-context';
 import { createRequestLogger } from './middleware/request-logger';
 import { createErrorHandler } from './middleware/error-handler';
 import { createRateLimiter } from './middleware/rate-limiter';
+import { createEmailService } from './lib/email';
+import { createAuthService } from './modules/auth/auth.service';
+import { createAuthRouter } from './modules/auth/auth.router';
+import { loadConfig } from './config';
 
 interface AppDependencies {
   db: KnexType;
@@ -15,6 +19,7 @@ interface AppDependencies {
 
 export function createApp({ db, redis, logger }: AppDependencies) {
   const app = express();
+  const config = loadConfig();
 
   app.use(express.json());
   app.use(createRequestLogger(logger));
@@ -46,6 +51,11 @@ export function createApp({ db, redis, logger }: AppDependencies) {
   // Global API rate limiter (100 req/min per IP)
   const apiLimiter = createRateLimiter(redis, { limit: 100, windowSeconds: 60, keyPrefix: 'rl:api' });
   app.use('/api', apiLimiter);
+
+  // Auth routes (no tenant context required — register creates the tenant)
+  const emailService = createEmailService({ resendApiKey: config.resendApiKey });
+  const authService = createAuthService({ db, redis, logger, emailService });
+  app.use('/api/auth', createAuthRouter(authService));
 
   app.use(createTenantContextMiddleware(db, redis, logger));
 
