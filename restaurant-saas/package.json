@@ -1,0 +1,15 @@
+{
+  "name": "restaurant-saas",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace=packages/backend",
+    "test": "npm test --workspace=packages/backend",
+    "lint": "eslint packages/*/src --ext .ts",
+    "db:migrate": "npm run db:migrate --workspace=packages/backend",
+    "db:rollback": "npm run db:rollback --workspace=packages/backend"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
